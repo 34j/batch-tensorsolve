@@ -160,7 +160,7 @@ def btensorsolve(
                 "It is impossible to infer the number of "
                 "batch axes from the shapes of `a` and `b`. "
                 "Consider specifying `num_batch_axes` explicitly.",
-                UserWarning,
+                AmbiguousBatchAxesWarning,
                 stacklevel=2,
             )
 
