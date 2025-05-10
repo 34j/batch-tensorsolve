@@ -32,7 +32,7 @@ def broadcast_without_repeating(
     """
     xp = array_namespace(*arrays)
     arrays_ = tuple(xp.asarray(a) for a in arrays)
-    xp.broadcast_shapes([a.shape for a in arrays_])
+    xp.broadcast_shapes(*[a.shape for a in arrays_])
     if check_same_ndim:
         if len({a.ndim for a in arrays_}) != 1:
             raise ValueError(
@@ -41,7 +41,7 @@ def broadcast_without_repeating(
             )
         return arrays_
     max_dim = max(a.ndim for a in arrays_)
-    return tuple(array[(None,) * (max_dim - array.ndim), ...] for array in arrays_)
+    return tuple(array[(None,) * (max_dim - array.ndim) + (...,)] for array in arrays_)
 
 
 def btensorsolve(
