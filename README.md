@@ -61,6 +61,8 @@ b = np.random.randn(2, 2, 3)
 assert_allclose(np.einsum("...ijk,...k->...ij", a, btensorsolve(a, b)), b)
 ```
 
+## Advanced Usage
+
 It is recommended to explicitly specify the batch axes, as the desired shape will be ambiguous if axes of size 1 are present.
 
 ```python
