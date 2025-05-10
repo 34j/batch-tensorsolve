@@ -41,7 +41,7 @@ def broadcast_without_repeating(
             )
         return arrays_
     max_dim = max(a.ndim for a in arrays_)
-    return tuple(array[(None,) * (max_dim - array.ndim)] for array in arrays_)
+    return tuple(array[(None,) * (max_dim - array.ndim), ...] for array in arrays_)
 
 
 def btensorsolve(
