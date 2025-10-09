@@ -172,6 +172,7 @@ def btensorsolve(
     num_b_batch_axis = len(batch_b_larger)
     num_common_batch_axis = num_batch_axis - num_b_batch_axis
     batch_b_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
+    batch_b_size = prod(batch_b_shape)
     batch_common_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
     
     # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6] -> [2, 3, 2| 2, 2, 3| 2, 6]
@@ -182,8 +183,10 @@ def btensorsolve(
     
     # a should not be repeated
     b_ = xp.broadcast_to(b_, a_.shape[:b_.ndim - axis_sol_last] + b_.shape[:axis_sol_last])
-    a_ = a_.reshape(ashape[:num_batch_axes] + (sol_size, sol_size))
-    b_ = b_.reshape(bshape[:num_batch_axes] + (sol_size, 1))
+    a_ = a_.reshape(batch_common_shape + (sol_size, sol_size))
+    b_ = b_.reshape(batch_common_shape + (sol_size, batch_b_size))
     x = xp.linalg.solve(a_, b_)
-    x = x.reshape(shape[:num_batch_axes] + ashape[axis_sol_last:])
+    x = x.reshape(batch_common_shape + ashape[axis_sol_last:])
+    for axis in batch_b_larger:
+        x = xp.moveaxis(x, -1, axis)
     return x
