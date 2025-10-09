@@ -135,15 +135,15 @@ def btensorsolve(
         a_ = a_.transpose(allaxes)
 
     # find right dimensions
-    # a = [2 (dim1) 2 2 3 (dim2) 2 6]
-    # b = [2 (dim1) 2 2 3 (dim2)]
+    # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6]
+    # b = [2, 3, 1, 1, 2 (dim1) 2 1 3 (dim2)]
     axis_sol_last = b_.ndim
-    ashape = a_.shape
-    bshape = b_.shape
-    shape = xp.broadcast_shapes(ashape[:axis_sol_last], bshape)
+    shape = xp.broadcast_shapes(a_.shape[:axis_sol_last], b_.shape)
 
     # the dimension of the linear system
-    sol_size = int(xp.prod(ashape[axis_sol_last:]))
+    sol_size = int(prod(a_.shape[axis_sol_last:]))
+    
+    # assume num_batch_axes
     if num_batch_axes is None:
         sol_size_current = 1
         for num_batch_axes in range(axis_sol_last - 1, -1, -1):
@@ -163,14 +163,25 @@ def btensorsolve(
                 AmbiguousBatchAxesWarning,
                 stacklevel=2,
             )
-
-    a_ = xp.broadcast_to(
-        a_,
-        ashape[:num_batch_axes]
-        + shape[num_batch_axes:axis_sol_last]
-        + ashape[axis_sol_last:],
-    )
-    b_ = xp.broadcast_to(b_, bshape[:num_batch_axes] + shape[num_batch_axes:])
+            
+    if ashape[:axis_sol_last][num_batch_axes:] != shape[num_batch_axes:]:
+        raise ValueError("")
+            
+    batch_shape = shape[:num_batch_axes]
+    batch_b_larger = [i for i in range(num_batch_axes) if ashape[i] == 1 and bshape[i] > 1]
+    num_b_batch_axis = len(batch_b_larger)
+    num_common_batch_axis = num_batch_axis - num_b_batch_axis
+    batch_b_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
+    batch_common_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
+    
+    # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6] -> [2, 3, 2| 2, 2, 3| 2, 6]
+    # b = [2, 3, 1, 1, 2 (dim1) 2 1 3 (dim2)] -> [1, 1, 2| 2, 1, 3| 2, 3]
+    a_ = a_[(0 if i in batch_b_larger else slice(None,) for i in range(num_batch_axes))]
+    for axis in batch_b_larger:
+        b_ = xp.moveaxis(b_, axis, -1)
+    
+    # a should not be repeated
+    b_ = xp.broadcast_to(b_, a_.shape[:b_.ndim - axis_sol_last] + b_.shape[:axis_sol_last])
     a_ = a_.reshape(ashape[:num_batch_axes] + (sol_size, sol_size))
     b_ = b_.reshape(bshape[:num_batch_axes] + (sol_size, 1))
     x = xp.linalg.solve(a_, b_)
