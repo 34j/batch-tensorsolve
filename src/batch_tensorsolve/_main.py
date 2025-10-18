@@ -1,5 +1,5 @@
-from math import prod
 import warnings
+from math import prod
 from typing import TypeVar
 
 from array_api_compat import array_namespace
