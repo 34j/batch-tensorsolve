@@ -1,3 +1,4 @@
+from math import prod
 import warnings
 from typing import TypeVar
 
@@ -143,7 +144,7 @@ def btensorsolve(
     shape = xp.broadcast_shapes(ashape[:axis_sol_last], bshape)
 
     # the dimension of the linear system
-    sol_size = int(xp.prod(ashape[axis_sol_last:]))
+    sol_size = int(prod(ashape[axis_sol_last:]))
     if num_batch_axes is None:
         sol_size_current = 1
         for num_batch_axes in range(axis_sol_last - 1, -1, -1):
