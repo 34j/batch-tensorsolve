@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.1 (2025-10-18)
+
+### Bug fixes
+
+- Use `math.prod()` instead of `xp.prod()` ([`4325bd5`](https://github.com/34j/batch-tensorsolve/commit/4325bd5344405787dffdb6870216390bb860f21c))
+
 ## v1.0.0 (2025-05-26)
 
 ## v0.1.0 (2025-05-10)
