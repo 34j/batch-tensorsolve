@@ -1,6 +1,6 @@
 import warnings
 from math import prod
-from typing import TypeVar
+from typing import Callable, TypeVar
 
 from array_api_compat import array_namespace
 
@@ -52,6 +52,7 @@ def btensorsolve(
     *,
     axes: tuple[int] | None = None,
     num_batch_axes: int | None = None,
+    solve: Callable[[TArray, TArray], TArray] | None = None,
 ) -> TArray:
     """
     Solve the tensor equation ``a x = b`` for x.
@@ -215,7 +216,8 @@ def btensorsolve(
     b_ = b_.reshape(batch_common_shape_b + (sol_size, batch_b_size))
 
     # solve
-    x = xp.linalg.solve(a_, b_)
+    solve_ = solve if solve is not None else xp.linalg.solve
+    x = solve_(a_, b_)
 
     # reshape back
     x = x.reshape(batch_common_shape + sol_shape_last + batch_b_shape)
