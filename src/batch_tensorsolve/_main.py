@@ -1,10 +1,10 @@
 import warnings
+from collections.abc import Callable
 from math import prod
-from typing import Callable, TypeVar
 
+import array_api_extra as xpx
+from array_api._2024_12 import Array
 from array_api_compat import array_namespace
-
-TArray = TypeVar("TArray")
 
 
 class AmbiguousBatchAxesWarning(RuntimeWarning):
@@ -12,8 +12,8 @@ class AmbiguousBatchAxesWarning(RuntimeWarning):
 
 
 def broadcast_without_repeating(
-    *arrays: TArray, check_same_ndim: bool = False
-) -> tuple[TArray, ...]:
+    *arrays: Array, check_same_ndim: bool = False
+) -> tuple[Array, ...]:
     """
     Broadcast arrays without repeating the data.
 
@@ -46,14 +46,13 @@ def broadcast_without_repeating(
 
 
 def btensorsolve(
-    a: TArray,
-    b: TArray,
+    a: Array,
+    b: Array,
     /,
     *,
-    axes: tuple[int] | None = None,
     num_batch_axes: int | None = None,
-    solve: Callable[[TArray, TArray], TArray] | None = None,
-) -> TArray:
+    solve: Callable[[Array, Array], Array] | None = None,
+) -> Array:
     """
     Solve the tensor equation ``a x = b`` for x.
 
@@ -71,9 +70,10 @@ def btensorsolve(
         ``prod(Q) == prod(b.shape[i:])``
     b : array_like
         Right-hand tensor, which can be of any shape.
-    axes : tuple of ints, optional
-        Axes in `a` to reorder to the right, before inversion.
-        If None (default), no reordering is done.
+    solve : Callable[[Array, Array], Array], optional
+        A function that solves a batch of linear systems. It must have the
+        same signature as `array_api.linalg.solve`. If None (default), the
+        default `array_api.linalg.solve` is used.
     num_batch_axes : int, optional
         The number of batch dimensions. If None (default), the number of batch
         dimensions is inferred from the shapes of `a` and `b`.
@@ -128,19 +128,12 @@ def btensorsolve(
     xp = array_namespace(a, b)
     a_ = xp.asarray(a)
     b_ = xp.asarray(b)
-    an = a_.ndim
-    if axes is not None:
-        allaxes = list(range(0, an))
-        for k in axes:
-            allaxes.remove(k)
-            allaxes.insert(an, k)
-        a_ = a_.transpose(allaxes)
 
     # find right dimensions
     # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6]
     # b = [2, 3, 1, 1, 2 (dim1) 2 1 3 (dim2)]
     axis_sol_last = b_.ndim
-    shape = xp.broadcast_shapes(a_.shape[:axis_sol_last], b_.shape)
+    shape = xpx.broadcast_shapes(a_.shape[:axis_sol_last], b_.shape)
 
     # the dimension of the linear system
     sol_size = int(prod(a_.shape[axis_sol_last:]))
@@ -173,17 +166,15 @@ def btensorsolve(
 
     # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6]
     # b = [2, 3, 1, 1, 2 (dim1) 2 2 3 (dim2)]
-    b_ = xp.broadcast_to(
-        b_, b_.shape[:num_batch_axes] + shape[num_batch_axes:]
-    )
+    b_ = xp.broadcast_to(b_, b_.shape[:num_batch_axes] + shape[num_batch_axes:])
 
     # split batch shape into two parts
     batch_shape = shape[:num_batch_axes]
-    batch_shape_b_idx = [
+    batch_shape_b_idx = tuple(
         i for i in range(num_batch_axes) if a_.shape[i] == 1 and b_.shape[i] > 1
-    ]
+    )
     batch_b_count = len(batch_shape_b_idx)
-    batch_common_count = num_batch_axes - batch_b_count
+    # batch_common_count = num_batch_axes - batch_b_count
     batch_b_shape = tuple(
         batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx
     )
@@ -212,15 +203,15 @@ def btensorsolve(
 
     # a should not be repeated
     # flatten last 2 axes
-    a_ = a_.reshape(batch_common_shape + (sol_size, sol_size))
-    b_ = b_.reshape(batch_common_shape_b + (sol_size, batch_b_size))
+    a_ = xp.reshape(a_, (*batch_common_shape, sol_size, sol_size))
+    b_ = xp.reshape(b_, (*batch_common_shape_b, sol_size, batch_b_size))
 
     # solve
     solve_ = solve if solve is not None else xp.linalg.solve
     x = solve_(a_, b_)
 
     # reshape back
-    x = x.reshape(batch_common_shape + sol_shape_last + batch_b_shape)
+    x = xp.reshape(x, batch_common_shape + sol_shape_last + batch_b_shape)
     x = xp.moveaxis(
         x,
         tuple(range(-batch_b_count, 0)),
