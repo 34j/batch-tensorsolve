@@ -170,6 +170,12 @@ def btensorsolve(
         raise ValueError("Non-batch axes of `a` must not be repeated.")
     sol_shape_last = a_.shape[axis_sol_last:]
 
+    # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6]
+    # b = [2, 3, 1, 1, 2 (dim1) 2 2 3 (dim2)]
+    b_ = xp.broadcast_to(
+        b_, b_.shape[:num_batch_axes] + shape[num_batch_axes:]
+    )
+
     # split batch shape into two parts
     batch_shape = shape[:num_batch_axes]
     batch_shape_b_idx = [
@@ -181,15 +187,18 @@ def btensorsolve(
         batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx
     )
     batch_common_shape = tuple(
-        batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx
+        batch_shape[i] for i in range(num_batch_axes) if i not in batch_shape_b_idx
+    )
+    batch_common_shape_b = tuple(
+        b_.shape[i] for i in range(num_batch_axes) if i not in batch_shape_b_idx
     )
     batch_b_size = prod(batch_b_shape)
 
     # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6] -> [2, 3, 2| 2, 2, 3| 2, 6]
-    # b = [2, 3, 1, 1, 2 (dim1) 2 1 3 (dim2)] -> [1, 1, 2| 2, 1, 3| 2, 3]
+    # b = [2, 3, 1, 1, 2 (dim1) 2 2 3 (dim2)] -> [1, 1, 2| 2, 2, 3| 2, 3]
     # a does not require moveaxis
     a_ = a_[
-        (
+        tuple(
             0
             if i in batch_shape_b_idx
             else slice(
@@ -198,22 +207,21 @@ def btensorsolve(
             for i in range(num_batch_axes)
         )
     ]
-    for axis in batch_shape_b_idx:
-        b_ = xp.moveaxis(b_, axis, -1)
+    b_ = xp.moveaxis(b_, batch_shape_b_idx, tuple(range(-batch_b_count, 0)))
 
     # a should not be repeated
-    b_ = xp.broadcast_to(
-        b_, a_.shape[: b_.ndim - axis_sol_last] + b_.shape[:axis_sol_last]
-    )
     # flatten last 2 axes
     a_ = a_.reshape(batch_common_shape + (sol_size, sol_size))
-    b_ = b_.reshape(batch_common_shape + (sol_size, batch_b_size))
+    b_ = b_.reshape(batch_common_shape_b + (sol_size, batch_b_size))
 
     # solve
     x = xp.linalg.solve(a_, b_)
 
     # reshape back
     x = x.reshape(batch_common_shape + sol_shape_last + batch_b_shape)
-    for axis in batch_shape_b_idx:
-        x = xp.moveaxis(x, -1, axis)
+    x = xp.moveaxis(
+        x,
+        tuple(range(-batch_b_count, 0)),
+        batch_shape_b_idx,
+    )
     return x
