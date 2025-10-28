@@ -1,10 +1,17 @@
 # Changelog
 
+## v1.0.2-rc.1 (2025-10-28)
+
 ## v1.0.1 (2025-10-18)
 
 ### Bug fixes
 
 - Use `math.prod()` instead of `xp.prod()` ([`4325bd5`](https://github.com/34j/batch-tensorsolve/commit/4325bd5344405787dffdb6870216390bb860f21c))
+
+### Performance improvements
+
+- Better rhs ([`b2f602e`](https://github.com/34j/batch-tensorsolve/commit/b2f602e12dacba3598df309d89fad40782d16c5e))
+- Better rhs ([`e8c4c89`](https://github.com/34j/batch-tensorsolve/commit/e8c4c89bdf3b6b872b1f954f648f2a08c35714c5))
 
 ## v1.0.0 (2025-05-26)
 

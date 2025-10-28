@@ -4,7 +4,7 @@ requires = [ "setuptools" ]
 
 [project]
 name = "batch-tensorsolve"
-version = "1.0.1"
+version = "1.0.2-rc.1"
 description = "Batched tensorsolve() for NumPy / PyTorch / JAX"
 readme = "README.md"
 license = { text = "MIT" }
