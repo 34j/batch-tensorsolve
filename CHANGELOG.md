@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.2 (2025-10-28)
+
+### Performance improvements
+
+- Better rhs ([`4951616`](https://github.com/34j/batch-tensorsolve/commit/495161602e3e159f08384546b46898346a4853db))
+
 ## v1.0.1 (2025-10-18)
 
 ### Bug fixes
