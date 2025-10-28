@@ -1,3 +1,4 @@
+from math import prod
 import warnings
 from typing import TypeVar
 
@@ -164,29 +165,38 @@ def btensorsolve(
                 stacklevel=2,
             )
             
-    if ashape[:axis_sol_last][num_batch_axes:] != shape[num_batch_axes:]:
-        raise ValueError("")
+    # a must not be repeated
+    if a_.shape[:axis_sol_last][num_batch_axes:] != shape[num_batch_axes:]:
+        raise ValueError("Non-batch axes of `a` must not be repeated.")
+    sol_shape_last = a_.shape[axis_sol_last:]
             
+    # split batch shape into two parts
     batch_shape = shape[:num_batch_axes]
-    batch_b_larger = [i for i in range(num_batch_axes) if ashape[i] == 1 and bshape[i] > 1]
-    num_b_batch_axis = len(batch_b_larger)
-    num_common_batch_axis = num_batch_axis - num_b_batch_axis
-    batch_b_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
+    batch_shape_b_idx = [i for i in range(num_batch_axes) if a_.shape[i] == 1 and b_.shape[i] > 1]
+    batch_b_count = len(batch_shape_b_idx)
+    batch_common_count = num_batch_axes - batch_b_count
+    batch_b_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx)
+    batch_common_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx)
     batch_b_size = prod(batch_b_shape)
-    batch_common_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_b_larger)
     
     # a = [1, 1, 2, 3, 2 (dim1) 2 2 3 (dim2) 2 6] -> [2, 3, 2| 2, 2, 3| 2, 6]
     # b = [2, 3, 1, 1, 2 (dim1) 2 1 3 (dim2)] -> [1, 1, 2| 2, 1, 3| 2, 3]
-    a_ = a_[(0 if i in batch_b_larger else slice(None,) for i in range(num_batch_axes))]
-    for axis in batch_b_larger:
+    # a does not require moveaxis
+    a_ = a_[(0 if i in batch_shape_b_idx else slice(None,) for i in range(num_batch_axes))]
+    for axis in batch_shape_b_idx:
         b_ = xp.moveaxis(b_, axis, -1)
     
     # a should not be repeated
     b_ = xp.broadcast_to(b_, a_.shape[:b_.ndim - axis_sol_last] + b_.shape[:axis_sol_last])
+    # flatten last 2 axes
     a_ = a_.reshape(batch_common_shape + (sol_size, sol_size))
     b_ = b_.reshape(batch_common_shape + (sol_size, batch_b_size))
+
+    # solve
     x = xp.linalg.solve(a_, b_)
-    x = x.reshape(batch_common_shape + ashape[axis_sol_last:])
-    for axis in batch_b_larger:
+
+    # reshape back
+    x = x.reshape(batch_common_shape + sol_shape_last + batch_b_shape)
+    for axis in batch_shape_b_idx:
         x = xp.moveaxis(x, -1, axis)
     return x
