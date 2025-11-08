@@ -36,7 +36,7 @@ urls.repository = "https://github.com/34j/batch-tensorsolve"
 [dependency-groups]
 dev = [
   "numpy>=2.3.4",
-  "pytest>=8,<9",
+  "pytest>=9,<10",
   "pytest-cov>=7,<8",
 ]
 docs = [
