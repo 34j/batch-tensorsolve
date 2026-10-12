@@ -73,8 +73,12 @@ from batch_tensorsolve import btensorsolve
 a = np.random.randn(2, 1, 2, 2)
 b = np.random.randn(2, 1, 2)
 # 2 possibilities:
-assert btensorsolve(a, b, num_batch_axes=1).shape == (2, 2) # 1st axis is batch
-assert btensorsolve(a, b, num_batch_axes=2).shape == (2, 1, 2) # 1st and 2nd axes are batch
+assert btensorsolve(a, b, num_batch_axes=1).shape == (2, 2)  # 1st axis is batch
+assert btensorsolve(a, b, num_batch_axes=2).shape == (
+    2,
+    1,
+    2,
+)  # 1st and 2nd axes are batch
 ```
 
 Broadcasting-like behavior is also supported:
@@ -85,8 +89,8 @@ from numpy.testing import assert_allclose
 
 from batch_tensorsolve import btensorsolve
 
-a = np.random.randn(1, 2, 3, 6) # -> (2, 2, 3, 6)
-b = np.random.randn(2, 1, 1) # -> (2, 2, 3)
+a = np.random.randn(1, 2, 3, 6)  # -> (2, 2, 3, 6)
+b = np.random.randn(2, 1, 1)  # -> (2, 2, 3)
 left = np.einsum("...ijk,...k->...ij", a, btensorsolve(a, b))
 assert_allclose(left, np.broadcast_to(b, left.shape))
 ```
