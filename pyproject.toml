@@ -43,6 +43,7 @@ docs = [
 ]
 
 [tool.ruff]
+extend = ".venv/ruff.toml"
 line-length = 88
 lint.select = [
   "B",   # flake8-bugbear

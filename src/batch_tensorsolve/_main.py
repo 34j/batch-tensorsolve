@@ -114,12 +114,12 @@ def btensorsolve(
     --------
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> a = rng.normal(size=(2, 2*3, 4, 2, 3, 4))
-    >>> b = rng.normal(size=(2, 2*3, 4))
+    >>> a = rng.normal(size=(2, 2 * 3, 4, 2, 3, 4))
+    >>> b = rng.normal(size=(2, 2 * 3, 4))
     >>> x = np.linalg.tensorsolve(a, b)
     >>> x.shape
     (2, 2, 3, 4)
-    >>> np.allclose(np.einsum('...ijklm,...klm->...ij', a, x), b)
+    >>> np.allclose(np.einsum("...ijklm,...klm->...ij", a, x), b)
     True
 
     """
