@@ -8,4 +8,4 @@ The package is published on [PyPI](https://pypi.org/project/batch-tensorsolve/) 
 pip install batch-tensorsolve
 ```
 
-Next, see the {ref}`section about usage <usage>` to see how to use it.
+Next, see the usage examples in the project README.
