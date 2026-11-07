@@ -33,5 +33,5 @@ def test_broadcast_without_repeating_error():
     rng = np.random.default_rng(0)
     a = rng.normal(0, 1, (2,))
     b = rng.normal(0, 1, (3,))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="broadcast"):
         broadcast_without_repeating(a, b)
