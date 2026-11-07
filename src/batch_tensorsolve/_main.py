@@ -11,9 +11,7 @@ class AmbiguousBatchAxesWarning(RuntimeWarning):
     pass
 
 
-def broadcast_without_repeating(
-    *arrays: Array, check_same_ndim: bool = False
-) -> tuple[Array, ...]:
+def broadcast_without_repeating(*arrays: Array, check_same_ndim: bool = False) -> tuple[Array, ...]:
     """
     Broadcast arrays without repeating the data.
 
@@ -29,6 +27,11 @@ def broadcast_without_repeating(
     -------
     tuple[TArray]
         The broadcasted arrays.
+
+    Raises
+    ------
+    ValueError
+        If the arrays cannot be broadcast together.
 
     """
     xp = array_namespace(*arrays)
@@ -97,6 +100,9 @@ def btensorsolve(
 
     Raises
     ------
+    ValueError
+        If the shapes of `a` and `b` cannot be divided into batch and solution
+        dimensions, or if non-batch axes of `a` would need to be repeated.
     LinAlgError
         If `a` is singular or not 'square' (in the above sense).
 
@@ -141,14 +147,13 @@ def btensorsolve(
     # assume num_batch_axes
     if num_batch_axes is None:
         sol_size_current = 1
-        for num_batch_axes in range(axis_sol_last - 1, -1, -1):
-            sol_size_current *= shape[num_batch_axes]
+        for batch_axes in range(axis_sol_last - 1, -1, -1):
+            sol_size_current *= shape[batch_axes]
             if sol_size_current == sol_size:
+                num_batch_axes = batch_axes
                 break
         else:
-            raise ValueError(
-                "Unable to divide batch dimensions and solution dimensions"
-            )
+            raise ValueError("Unable to divide batch dimensions and solution dimensions")
 
         if num_batch_axes > 0 and shape[num_batch_axes - 1] == 1:
             warnings.warn(
@@ -175,9 +180,7 @@ def btensorsolve(
     )
     batch_b_count = len(batch_shape_b_idx)
     # batch_common_count = num_batch_axes - batch_b_count
-    batch_b_shape = tuple(
-        batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx
-    )
+    batch_b_shape = tuple(batch_shape[i] for i in range(num_batch_axes) if i in batch_shape_b_idx)
     batch_common_shape = tuple(
         batch_shape[i] for i in range(num_batch_axes) if i not in batch_shape_b_idx
     )
@@ -212,9 +215,8 @@ def btensorsolve(
 
     # reshape back
     x = xp.reshape(x, batch_common_shape + sol_shape_last + batch_b_shape)
-    x = xp.moveaxis(
+    return xp.moveaxis(
         x,
         tuple(range(-batch_b_count, 0)),
         batch_shape_b_idx,
     )
-    return x
