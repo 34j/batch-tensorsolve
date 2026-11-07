@@ -44,6 +44,7 @@ docs = [
 
 [tool.ruff]
 extend = ".venv/ruff.toml"
+lint.per-file-ignores."docs/conf.py" = [ "F403" ]
 lint.per-file-ignores."src/batch_tensorsolve/_main.py" = [ "DOC502" ]
 
 [tool.pyproject-fmt]
