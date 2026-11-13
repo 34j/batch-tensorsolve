@@ -25,7 +25,7 @@ classifiers = [
 ]
 dependencies = [
   "array-api-compat>=1.11.2",
-  "array-api-extra>=0.7.2",
+  "array-api-extra>=0.11.5",
   "types-array-api>=1.1.4",
 ]
 urls."Bug Tracker" = "https://github.com/34j/batch-tensorsolve/issues"
